@@ -1,0 +1,69 @@
+# 定义 3D CNN 模型
+class ThreeDProteinCNN(nn.Module):
+    def __init__(self):
+        # 调用父类 nn.Module 的构造函数
+        super(ThreeDProteinCNN, self).__init__()
+        # 第一个 3D 卷积层
+        # in_channels=1 表示输入数据的通道数为 1，可理解为单通道的 3D 数据
+        # out_channels=16 表示卷积操作后输出的通道数为 16
+        # kernel_size=3 表示 3D 卷积核的大小为 3x3x3
+        # padding=1 表示在输入数据周围填充 1 个单位，以保持输出特征体的尺寸与输入相近
+        self.conv1 = nn.Conv3d(in_channels=1, out_channels=16, kernel_size=3, padding=1)
+        # 第一个批量归一化层，对卷积层输出的 16 个通道进行归一化处理
+        # 有助于加速模型收敛，减少内部协变量偏移
+        self.bn1 = nn.BatchNorm3d(16)
+        # 第一个激活函数，使用 ReLU（Rectified Linear Unit）
+        # 引入非线性，增强模型的表达能力
+        self.relu1 = nn.ReLU()
+        # 第一个 3D 池化层，使用最大池化
+        # kernel_size=2 表示 3D 池化核大小为 2x2x2，用于下采样，减少特征体的尺寸
+        self.pool1 = nn.MaxPool3d(kernel_size=2)
+
+        # 第二个 3D 卷积层
+        # in_channels=16 表示输入通道数为上一层卷积的输出通道数 16
+        # out_channels=32 表示卷积后输出通道数为 32
+        self.conv2 = nn.Conv3d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
+        # 第二个批量归一化层，对 32 个通道进行归一化
+        self.bn2 = nn.BatchNorm3d(32)
+        # 第二个激活函数，使用 ReLU
+        self.relu2 = nn.ReLU()
+        # 第二个 3D 池化层，使用最大池化，池化核大小为 2x2x2
+        self.pool2 = nn.MaxPool3d(kernel_size=2)
+
+        # 第三个 3D 卷积层
+        # in_channels=32 表示输入通道数为上一层卷积的输出通道数 32
+        # out_channels=64 表示卷积后输出通道数为 64
+        self.conv3 = nn.Conv3d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        # 第三个批量归一化层，对 64 个通道进行归一化
+        self.bn3 = nn.BatchNorm3d(64)
+        # 第三个激活函数，使用 ReLU
+        self.relu3 = nn.ReLU()
+        # 第三个 3D 池化层，使用最大池化，池化核大小为 2x2x2
+        self.pool3 = nn.MaxPool3d(kernel_size=2)
+
+        # 假设输入的 3D 蛋白结构数据尺寸为 32x32x32，经过三次池化（每次缩小一半）后，特征体尺寸变为 4x4x4
+        # 输入特征数为 64 * 4 * 4 * 4，即通道数乘以特征体的长、宽、高
+        # 输出特征数为 128
+        self.fc1 = nn.Linear(64 * 4 * 4 * 4, 128)
+        # 第四个激活函数，使用 ReLU
+        self.relu4 = nn.ReLU()
+        # 第二个全连接层
+        # 输入特征数为 128，输出特征数为 1，用于预测 IC50 值
+        self.fc2 = nn.Linear(128, 1)
+
+    def forward(self, x):
+        # 前向传播过程
+        # 依次经过第一个 3D 卷积层、批量归一化层、激活函数和池化层
+        x = self.pool1(self.relu1(self.bn1(self.conv1(x))))
+        # 依次经过第二个 3D 卷积层、批量归一化层、激活函数和池化层
+        x = self.pool2(self.relu2(self.bn2(self.conv2(x))))
+        # 依次经过第三个 3D 卷积层、批量归一化层、激活函数和池化层
+        x = self.pool3(self.relu3(self.bn3(self.conv3(x))))
+        # 将多维的特征体展平为一维向量
+        # -1 表示自动计算该维度的大小，以保证总元素数量不变
+        x = x.view(-1, 64 * 4 * 4 * 4)
+        # 经过第一个全连接层和激活函数
+        x = self.relu4(self.fc1(x))
+        # 经过第二个全连接层得到最终的预测值
+        x = self.fc2(x)
+        return x

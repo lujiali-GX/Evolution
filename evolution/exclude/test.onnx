@@ -1,0 +1,20 @@
+pytorch2.6.0:°
+6
+onnx::Cast_0/Cast_output_0/Cast"Cast*	
+to 
+I
+/Cast_output_0
+onnx::MatMul_7/fc/MatMul_output_0
+/fc/MatMul"MatMul
+/
+fc.bias
+/fc/MatMul_output_06/fc/Add"Add
+main_graph*Bfc.biasJõä¾*,Bonnx::MatMul_7J‚|Î>¥~^¾Æåî=q½á>Ó·¬¾Z
+onnx::Cast_0
+
+
+b
+6
+
+
+B
